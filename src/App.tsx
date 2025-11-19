@@ -1,32 +1,90 @@
 import React, { useState } from 'react';
-import { ConfigProvider } from 'antd';
+import { ConfigProvider, Menu, Layout } from 'antd';
+import { PlayCircleOutlined, VideoCameraOutlined } from '@ant-design/icons';
 import zhCN from 'antd/locale/zh_CN';
 import StreamUrlGenerator from './components/StreamUrlGenerator';
+import PlayUrlGenerator from './components/PlayUrlGenerator';
 import HistoryPanel from './components/HistoryPanel';
+import PlayHistoryPanel from './components/PlayHistoryPanel';
 import './App.css';
 
-type ViewType = 'generator' | 'history';
+const { Header, Content } = Layout;
+
+type ViewType = 'stream-generator' | 'play-generator' | 'stream-history' | 'play-history';
 
 const App: React.FC = () => {
-  const [currentView, setCurrentView] = useState<ViewType>('generator');
+  const [currentView, setCurrentView] = useState<ViewType>('stream-generator');
 
-  const handleShowHistory = () => {
-    setCurrentView('history');
+  const handleShowStreamHistory = () => {
+    setCurrentView('stream-history');
   };
 
-  const handleBackToGenerator = () => {
-    setCurrentView('generator');
+  const handleShowPlayHistory = () => {
+    setCurrentView('play-history');
   };
+
+  const handleBackToStreamGenerator = () => {
+    setCurrentView('stream-generator');
+  };
+
+  const handleBackToPlayGenerator = () => {
+    setCurrentView('play-generator');
+  };
+
+  const handleMenuClick = (key: string) => {
+    setCurrentView(key as ViewType);
+  };
+
+  const menuItems = [
+    {
+      key: 'stream-generator',
+      icon: <VideoCameraOutlined />,
+      label: '推流地址生成器'
+    },
+    {
+      key: 'play-generator',
+      icon: <PlayCircleOutlined />,
+      label: '播放地址生成器'
+    }
+  ];
+
+  const renderCurrentView = () => {
+    switch (currentView) {
+      case 'stream-generator':
+        return <StreamUrlGenerator onHistoryClick={handleShowStreamHistory} />;
+      case 'play-generator':
+        return <PlayUrlGenerator onHistoryClick={handleShowPlayHistory} />;
+      case 'stream-history':
+        return <HistoryPanel onBack={handleBackToStreamGenerator} />;
+      case 'play-history':
+        return <PlayHistoryPanel onBack={handleBackToPlayGenerator} />;
+      default:
+        return <StreamUrlGenerator onHistoryClick={handleShowStreamHistory} />;
+    }
+  };
+
+  const showMenu = currentView === 'stream-generator' || currentView === 'play-generator';
 
   return (
     <ConfigProvider locale={zhCN}>
-      <div className="App">
-        {currentView === 'generator' ? (
-          <StreamUrlGenerator onHistoryClick={handleShowHistory} />
-        ) : (
-          <HistoryPanel onBack={handleBackToGenerator} />
+      <Layout className="App" style={{ minHeight: '100vh' }}>
+        {showMenu && (
+          <Header style={{ padding: 0, background: '#fff', borderBottom: '1px solid #f0f0f0' }}>
+            <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 20px' }}>
+              <Menu
+                mode="horizontal"
+                selectedKeys={[currentView]}
+                items={menuItems}
+                onClick={({ key }) => handleMenuClick(key)}
+                style={{ border: 'none', background: 'transparent' }}
+              />
+            </div>
+          </Header>
         )}
-      </div>
+        <Content style={{ background: '#f5f5f5' }}>
+          {renderCurrentView()}
+        </Content>
+      </Layout>
     </ConfigProvider>
   );
 };
