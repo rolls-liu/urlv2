@@ -1,15 +1,17 @@
-设计目标：推流地址生成器
+设计目标：推流地址生成器、播放地址生成器
 
-功能：
+功能一：推流地址生成器
 1. 支持RTMP、WebRTC、SRT、RTMP over SRT、RTMP over QUIC协议
 2. 支持选择MD5、SHA256加密
-3. 支持自定义推流域名、AppName、StreamName
+3. 支持自定义推流域名、AppName、StreamName、播放域名
 4. 支持自定义key
 5. 支持自定义过期时间
 6. 支持生成推流地址
 7. 支持复制推流地址
 8. 支持数据持久化，支持恢复上一次的输入
 9. 支持历史记录查看，数据存在数据库内
+10. 支持清空输入框
+
 
 
 界面：
@@ -25,54 +27,144 @@
 1. 过期时间为UTC时间，格式为YYYY-MM-DD HH:MM:SS
 
 
-
 推流地址解析：
-地址组成：推流域名 + AppName + StreamName + 鉴权信息
+1、如果用户未输入密钥，则不进行鉴权；解析出推流域名、AppName、StreamName；
+	
+	地址组成：推流域名 + AppName + StreamName
+	RTMP地址：rtmp://推流域名/AppName/StreamName
+	WebRTC地址：webrtc://推流域名/AppName/StreamName
+	SRT地址：srt://推流域名:9000?streamid=#!::h=推流域名,r=AppName/StreamName
+	RTMP over SRT 地址：rtmp://推流域名:3570/AppName/StreamName
+	RTMP over QUIC 地址：rtmp://推流域名:443/AppName/StreamName
 
-加密类型：MD5
+2、如果是鉴权，则解析出推流域名、AppName、StreamName和txSecret和txTime；同时根据不同加密类型，计算出txSecret；
 
-RTMP地址：rtmp://推流域名/AppName/StreamName?txSecret=md5(key+StreamName+hex(time))&txTime=hex(time)
+	地址组成：推流域名 + AppName + StreamName + 鉴权信息
 
-WebRTC地址：webrtc://推流域名/AppName/StreamName?txSecret=md5(key+StreamName+hex(time))&txTime=hex(time)	
+	加密类型：MD5
 
-SRT地址：srt://推流域名:9000?streamid=#!::h=推流域名,r=AppName/StreamName,txSecret=md5(key+StreamName+hex(time)),txTime=hex(time)	
+	RTMP地址：rtmp://推流域名/AppName/StreamName?txSecret=md5(key+StreamName+hex(time))&txTime=hex(time)
 
-RTMP over SRT 地址：rtmp://推流域名:3570/AppName/StreamName?txSecret=md5(key+StreamName+hex(time))&txTime=hex(time)	
+	WebRTC地址：webrtc://推流域名/AppName/StreamName?txSecret=md5(key+StreamName+hex(time))&txTime=hex(time)	
 
-RTMP over QUIC 地址：rtmp://推流域名:443/AppName/StreamName?txSecret=
-md5(key+StreamName+hex(time))&txTime=hex(time)
+	SRT地址：srt://推流域名:9000?streamid=#!::h=推流域名,r=AppName/StreamName,txSecret=md5(key+StreamName+hex(time)),txTime=hex(time)	
 
+	RTMP over SRT 地址：rtmp://推流域名:3570/AppName/StreamName?txSecret=md5(key+StreamName+hex(time))&txTime=hex(time)	
 
-加密类型：SHA256
-
-RTMP地址：rtmp://推流域名/AppName/StreamName?txSecret=SHA256(key+StreamName+hex(time))&txTime=hex(time)
-
-WebRTC地址：webrtc://推流域名/AppName/StreamName?txSecret=SHA256(key+StreamName+hex(time))&txTime=hex(time)	
-
-SRT地址：srt://推流域名:9000?streamid=#!::h=推流域名,r=AppName/StreamName,txSecret=SHA256(key+StreamName+hex(time)),txTime=hex(time)	
-
-RTMP over SRT 地址：rtmp://推流域名:3570/AppName/StreamName?txSecret=SHA256(key+StreamName+hex(time))&txTime=hex(time)	
-
-RTMP over QUIC 地址：rtmp://推流域名:443/AppName/StreamName?txSecret=
-SHA256(key+StreamName+hex(time))&txTime=hex(time)
+	RTMP over QUIC 地址：rtmp://推流域名:443/AppName/StreamName?txSecret=
+	md5(key+StreamName+hex(time))&txTime=hex(time)
 
 
+	加密类型：SHA256
 
-输出示例：
-RTMP 地址
-rtmp://214287.push.tlivecloud.com/live/rollsliu?txSecret=4f9db66f59ba26f211478a1d73433fbf&txTime=691DC0C9
+	RTMP地址：rtmp://推流域名/AppName/StreamName?txSecret=SHA256(key+StreamName+hex(time))&txTime=hex(time)
 
-WebRTC 地址
-webrtc://214287.push.tlivecloud.com/live/rollsliu?txSecret=4f9db66f59ba26f211478a1d73433fbf&txTime=691DC0C9
+	WebRTC地址：webrtc://推流域名/AppName/StreamName?txSecret=SHA256(key+StreamName+hex(time))&txTime=hex(time)	
 
-SRT 地址
-srt://214287.push.tlivecloud.com:9000?streamid=#!::h=214287.push.tlivecloud.com,r=live/rollsliu,txSecret=4f9db66f59ba26f211478a1d73433fbf,txTime=691DC0C9
+	SRT地址：srt://推流域名:9000?streamid=#!::h=推流域名,r=AppName/StreamName,txSecret=SHA256(key+StreamName+hex(time)),txTime=hex(time)	
 
-RTMP over SRT 地址
-rtmp://214287.push.tlivecloud.com:3570/live/rollsliu?txSecret=4f9db66f59ba26f211478a1d73433fbf&txTime=691DC0C9
+	RTMP over SRT 地址：rtmp://推流域名:3570/AppName/StreamName?txSecret=SHA256(key+StreamName+hex(time))&txTime=hex(time)	
 
-RTMP over QUIC 地址
-rtmp://214287.push.tlivecloud.com:443/live/rollsliu?txSecret=4f9db66f59ba26f211478a1d73433fbf&txTime=691DC0C9
+	RTMP over QUIC 地址：rtmp://推流域名:443/AppName/StreamName?txSecret=
+	SHA256(key+StreamName+hex(time))&txTime=hex(time)
+
+
+
+	输出示例：
+	RTMP 地址
+	rtmp://214287.push.tlivecloud.com/live/rollsliu?txSecret=4f9db66f59ba26f211478a1d73433fbf&txTime=691DC0C9
+
+	WebRTC 地址
+	webrtc://214287.push.tlivecloud.com/live/rollsliu?txSecret=4f9db66f59ba26f211478a1d73433fbf&txTime=691DC0C9
+
+	SRT 地址
+	srt://214287.push.tlivecloud.com:9000?streamid=#!::h=214287.push.tlivecloud.com,r=live/rollsliu,txSecret=4f9db66f59ba26f211478a1d73433fbf,txTime=691DC0C9
+
+	RTMP over SRT 地址
+	rtmp://214287.push.tlivecloud.com:3570/live/rollsliu?txSecret=4f9db66f59ba26f211478a1d73433fbf&txTime=691DC0C9
+
+	RTMP over QUIC 地址
+	rtmp://214287.push.tlivecloud.com:443/live/rollsliu?txSecret=4f9db66f59ba26f211478a1d73433fbf&txTime=691DC0C9
+
+
+
+
+功能二：播放地址生成器
+
+1. 支持RTMP、WebRTC、FLV、M3U8格式
+2. 支持选择MD5、SHA256加密
+3. 支持自定义推流域名、AppName、StreamName、播放域名
+4. 支持自定义key
+5. 支持自定义过期时间
+6. 支持生成播放地址
+7. 支持复制播放地址
+8. 支持数据持久化，支持恢复上一次的输入
+9. 支持历史记录查看，数据存在数据库内
+10. 支持清空输入框
+
+界面：
+1. 支持选择协议
+2. 支持选择加密类型
+3. 支持输入播放域名、AppName、StreamName、key、过期时间
+4. 支持生成推流地址
+5. 支持复制推流地址
+6. 支持清空输入框
+7. 支持复制输出框
+
+原始流播放地址生成规则：
+原始流播放地址：播放域名+AppName+StreamName+鉴权信息
+
+RTMP格式
+rtmp://播放域名/AppName/StreamName?txSecret=Md5(key+StreamName+hex(time))&txTime=hex(time)
+FLV格式
+http(s)://播放域名/AppName/StreamName.flv?txSecret=Md5(key+StreamName+hex(time))&txTime=hex(time)
+M3U8格式
+http(s)://播放域名/AppName/StreamName.m3u8?txSecret=Md5(key+StreamName+hex(time))&txTime=hex(time)
+WebRTC格式
+webrtc://播放域名/AppName/StreamName?txSecret=Md5(key+StreamName+hex(time))&txTime=hex(time)
+
+
+播放地址解析：
+1、如果用户未输入密钥，则不进行鉴权；解析出推流域名、AppName、StreamName；
+	地址组成：播放域名 + AppName + StreamName
+	
+	RTMP格式
+	rtmp://播放域名/AppName/StreamName
+	FLV格式
+	http(s)://播放域名/AppName/StreamName.flv?
+	M3U8格式
+	http(s)://播放域名/AppName/StreamName.m3u8
+	WebRTC格式
+	webrtc://播放域名/AppName/StreamName
+
+2、如果是鉴权，则解析出播放域名、AppName、StreamName和txSecret和txTime；同时根据不同加密类型，计算出txSecret；
+
+	地址组成：播放域名 + AppName + StreamName + 鉴权信息
+
+	加密类型：MD5
+
+	RTMP格式
+	rtmp://domain/AppName/StreamName?txSecret=Md5(key+StreamName+hex(time))&txTime=hex(time)
+	FLV格式
+	http(s)://domain/AppName/StreamName.flv?txSecret=Md5(key+StreamName+hex(time))&txTime=hex(time)
+	M3U8格式
+	http(s)://domain/AppName/StreamName.m3u8?txSecret=Md5(key+StreamName+hex(time))&txTime=hex(time)
+	WebRTC格式
+	webrtc://domain/AppName/StreamName?txSecret=Md5(key+StreamName+hex(time))&txTime=hex(time)
+
+
+	加密类型：SHA256
+
+	RTMP格式
+	rtmp://domain/AppName/StreamName?txSecret=SHA256(key+StreamName+hex(time))&txTime=hex(time)
+	FLV格式
+	http(s)://domain/AppName/StreamName.flv?txSecret=SHA256(key+StreamName+hex(time))&txTime=hex(time)
+	M3U8格式
+	http(s)://domain/AppName/StreamName.m3u8?txSecret=SHA256(key+StreamName+hex(time))&txTime=hex(time)
+	WebRTC格式
+	webrtc://domain/AppName/StreamName?txSecret=SHA256(key+StreamName+hex(time))&txTime=hex(time)
+
+
 
 
 参考代码:(go语言)

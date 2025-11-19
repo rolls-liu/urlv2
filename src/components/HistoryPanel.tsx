@@ -14,7 +14,7 @@ import {
 } from 'antd';
 import { ArrowLeftOutlined, CopyOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
-import { AggregatedHistoryRecord, ProtocolType, AllProtocolUrls } from '../types';
+import { AggregatedHistoryRecord, ProtocolType } from '../types';
 import { getAggregatedHistory, deleteAggregatedHistoryRecord, clearAggregatedHistory } from '../utils/storage';
 
 const { Title, Text } = Typography;

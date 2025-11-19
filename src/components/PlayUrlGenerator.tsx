@@ -18,22 +18,22 @@ import {
 import { CopyOutlined, ClearOutlined, HistoryOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
-import { StreamConfig, ProtocolType, EncryptionType, AllProtocolUrls } from '../types';
-import { generateAllProtocolUrls, validateStreamConfig } from '../utils/urlGenerator';
-import { saveLastConfig, getLastConfig, saveAggregatedHistoryRecord, getHistoryInputValues } from '../utils/storage';
+import { PlayConfig, PlayProtocolType, EncryptionType, AllPlayProtocolUrls } from '../types';
+import { generateAllPlayProtocolUrls, validatePlayConfig } from '../utils/urlGenerator';
+import { saveLastPlayConfig, getLastPlayConfig, saveAggregatedPlayHistoryRecord, getPlayHistoryInputValues } from '../utils/storage';
 
 dayjs.extend(utc);
 
 const { Title, Text } = Typography;
 const { Option } = Select;
 
-interface StreamUrlGeneratorProps {
+interface PlayUrlGeneratorProps {
   onHistoryClick: () => void;
 }
 
-const StreamUrlGenerator: React.FC<StreamUrlGeneratorProps> = ({ onHistoryClick }) => {
+const PlayUrlGenerator: React.FC<PlayUrlGeneratorProps> = ({ onHistoryClick }) => {
   const [form] = Form.useForm();
-  const [generatedUrls, setGeneratedUrls] = useState<AllProtocolUrls | null>(null);
+  const [generatedUrls, setGeneratedUrls] = useState<AllPlayProtocolUrls | null>(null);
   const [loading, setLoading] = useState(false);
   const [historyInputs, setHistoryInputs] = useState<{
     domains: string[];
@@ -47,8 +47,6 @@ const StreamUrlGenerator: React.FC<StreamUrlGeneratorProps> = ({ onHistoryClick 
     keys: []
   });
 
-
-
   // 加密类型选项
   const encryptionOptions: { value: EncryptionType; label: string }[] = [
     { value: 'MD5', label: 'MD5' },
@@ -59,11 +57,11 @@ const StreamUrlGenerator: React.FC<StreamUrlGeneratorProps> = ({ onHistoryClick 
   useEffect(() => {
     try {
       // 加载历史输入值
-      const historyValues = getHistoryInputValues();
+      const historyValues = getPlayHistoryInputValues();
       setHistoryInputs(historyValues);
 
       // 加载最后一次配置
-      const lastConfig = getLastConfig();
+      const lastConfig = getLastPlayConfig();
       if (lastConfig) {
         const formValues: any = {
           ...lastConfig
@@ -105,13 +103,13 @@ const StreamUrlGenerator: React.FC<StreamUrlGeneratorProps> = ({ onHistoryClick 
     }
   }, [form]);
 
-  // 生成推流地址
+  // 生成播放地址
   const handleGenerate = async () => {
     try {
       setLoading(true);
       const values = await form.validateFields();
       
-      const config = {
+      const config: PlayConfig = {
         encryption: values.encryption,
         domain: values.domain,
         appName: values.appName,
@@ -121,35 +119,34 @@ const StreamUrlGenerator: React.FC<StreamUrlGeneratorProps> = ({ onHistoryClick 
       };
 
       // 验证配置
-      const validation = validateStreamConfig(config);
+      const validation = validatePlayConfig(config);
       if (!validation.valid) {
         validation.errors.forEach(error => message.error(error));
         return;
       }
 
       // 生成所有协议的URL
-      const urls = generateAllProtocolUrls(config);
+      const urls = generateAllPlayProtocolUrls(config);
       setGeneratedUrls(urls);
 
-      // 保存配置（为了兼容历史记录，我们保存RTMP协议的配置）
-      const configForSave: StreamConfig = { ...config, protocol: 'RTMP' };
-      saveLastConfig(configForSave);
+      // 保存配置
+      saveLastPlayConfig(config);
 
       // 保存聚合历史记录
-      saveAggregatedHistoryRecord(config, urls);
+      saveAggregatedPlayHistoryRecord(config, urls);
 
       // 更新历史输入值
       try {
-        const updatedHistoryValues = getHistoryInputValues();
+        const updatedHistoryValues = getPlayHistoryInputValues();
         setHistoryInputs(updatedHistoryValues);
       } catch (error) {
         console.warn('更新历史输入值失败:', error);
       }
 
-      message.success('所有协议推流地址生成成功！');
+      message.success('所有协议播放地址生成成功！');
     } catch (error) {
-      console.error('生成推流地址失败:', error);
-      message.error('生成推流地址失败，请检查输入参数');
+      console.error('生成播放地址失败:', error);
+      message.error('生成播放地址失败，请检查输入参数');
     } finally {
       setLoading(false);
     }
@@ -177,34 +174,26 @@ const StreamUrlGenerator: React.FC<StreamUrlGeneratorProps> = ({ onHistoryClick 
   };
 
   // 获取协议标签颜色
-  const getProtocolColor = (protocol: ProtocolType): string => {
-    const colors: Record<ProtocolType, string> = {
+  const getProtocolColor = (protocol: PlayProtocolType): string => {
+    const colors: Record<PlayProtocolType, string> = {
       'RTMP': 'blue',
       'WebRTC': 'green', 
-      'SRT': 'orange',
-      'RTMP_OVER_SRT': 'purple',
-      'RTMP_OVER_QUIC': 'red'
+      'FLV': 'orange',
+      'M3U8': 'purple'
     };
     return colors[protocol] || 'default';
   };
 
   // 获取协议显示名称
-  const getProtocolDisplayName = (protocol: ProtocolType): string => {
-    const names: Record<ProtocolType, string> = {
-      'RTMP': 'RTMP',
-      'WebRTC': 'WebRTC',
-      'SRT': 'SRT', 
-      'RTMP_OVER_SRT': 'RTMP over SRT',
-      'RTMP_OVER_QUIC': 'RTMP over QUIC'
-    };
-    return names[protocol];
+  const getProtocolDisplayName = (protocol: PlayProtocolType): string => {
+    return protocol;
   };
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '20px' }}>
       <Card title={
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Title level={3} style={{ margin: 0 }}>推流地址生成器</Title>
+          <Title level={3} style={{ margin: 0 }}>播放地址生成器</Title>
           <Button 
             icon={<HistoryOutlined />} 
             onClick={onHistoryClick}
@@ -239,12 +228,12 @@ const StreamUrlGenerator: React.FC<StreamUrlGeneratorProps> = ({ onHistoryClick 
           <Row gutter={16}>
             <Col xs={24} sm={8}>
               <Form.Item
-                label="推流域名"
+                label="播放域名"
                 name="domain"
-                rules={[{ required: true, message: '请输入推流域名' }]}
+                rules={[{ required: true, message: '请输入播放域名' }]}
               >
                 <AutoComplete
-                  placeholder="如: push.example.com"
+                  placeholder="如: play.example.com"
                   options={historyInputs?.domains?.length > 0 
                     ? historyInputs.domains.map(domain => ({ value: domain, label: domain }))
                     : []
@@ -323,7 +312,7 @@ const StreamUrlGenerator: React.FC<StreamUrlGeneratorProps> = ({ onHistoryClick 
               <Form.Item
                 label="过期时间 (UTC)"
                 name="expireTime"
-                tooltip="推流地址的过期时间，使用UTC时间"
+                tooltip="播放地址的过期时间，使用UTC时间"
               >
                 <DatePicker
                   showTime
@@ -351,7 +340,7 @@ const StreamUrlGenerator: React.FC<StreamUrlGeneratorProps> = ({ onHistoryClick 
           <>
             <Divider />
             <div>
-              <Title level={4}>生成的推流地址</Title>
+              <Title level={4}>生成的播放地址</Title>
               <Space direction="vertical" style={{ width: '100%' }} size="middle">
                 {Object.entries(generatedUrls).map(([protocol, url]) => (
                   <Alert
@@ -359,17 +348,17 @@ const StreamUrlGenerator: React.FC<StreamUrlGeneratorProps> = ({ onHistoryClick 
                     message={
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span style={{ 
-                          backgroundColor: getProtocolColor(protocol as ProtocolType), 
+                          backgroundColor: getProtocolColor(protocol as PlayProtocolType), 
                           color: 'white', 
                           padding: '2px 8px', 
                           borderRadius: '4px', 
                           fontSize: '12px',
-                          minWidth: '100px',
+                          minWidth: '80px',
                           textAlign: 'center'
                         }}>
-                          {getProtocolDisplayName(protocol as ProtocolType)}
+                          {getProtocolDisplayName(protocol as PlayProtocolType)}
                         </span>
-                        <span>推流地址已生成</span>
+                        <span>播放地址已生成</span>
                       </div>
                     }
                     description={
@@ -384,7 +373,7 @@ const StreamUrlGenerator: React.FC<StreamUrlGeneratorProps> = ({ onHistoryClick 
                           onClick={() => handleCopy(url)}
                           style={{ marginTop: '8px', padding: 0 }}
                         >
-                          复制 {getProtocolDisplayName(protocol as ProtocolType)} 地址
+                          复制 {getProtocolDisplayName(protocol as PlayProtocolType)} 地址
                         </Button>
                       </div>
                     }
@@ -397,7 +386,7 @@ const StreamUrlGenerator: React.FC<StreamUrlGeneratorProps> = ({ onHistoryClick 
                     type="primary" 
                     onClick={() => {
                       const allUrls = Object.entries(generatedUrls)
-                        .map(([protocol, url]) => `${getProtocolDisplayName(protocol as ProtocolType)}: ${url}`)
+                        .map(([protocol, url]) => `${getProtocolDisplayName(protocol as PlayProtocolType)}: ${url}`)
                         .join('\n\n');
                       handleCopy(allUrls);
                     }}
@@ -416,8 +405,8 @@ const StreamUrlGenerator: React.FC<StreamUrlGeneratorProps> = ({ onHistoryClick 
         <div>
           <Title level={5}>功能特点</Title>
           <ul>
-            <li><strong>一键生成：</strong> 同时生成所有协议的推流地址</li>
-            <li><strong>多协议支持：</strong> RTMP、WebRTC、SRT、RTMP over SRT、RTMP over QUIC</li>
+            <li><strong>一键生成：</strong> 同时生成所有协议的播放地址</li>
+            <li><strong>多协议支持：</strong> RTMP、WebRTC、FLV、M3U8</li>
             <li><strong>灵活复制：</strong> 可以单独复制或批量复制所有地址</li>
             <li><strong>自动保存：</strong> 每种协议的地址都会保存到历史记录</li>
           </ul>
@@ -426,15 +415,14 @@ const StreamUrlGenerator: React.FC<StreamUrlGeneratorProps> = ({ onHistoryClick 
           <Space wrap>
             <Tag color="blue">RTMP - 实时消息传输协议</Tag>
             <Tag color="green">WebRTC - Web实时通信协议</Tag>
-            <Tag color="orange">SRT - 安全可靠传输协议</Tag>
-            <Tag color="purple">RTMP over SRT - 基于SRT的RTMP传输</Tag>
-            <Tag color="red">RTMP over QUIC - 基于QUIC的RTMP传输</Tag>
+            <Tag color="orange">FLV - Flash视频格式</Tag>
+            <Tag color="purple">M3U8 - HTTP Live Streaming</Tag>
           </Space>
           
           <Title level={5}>使用步骤</Title>
           <ol>
             <li>选择加密类型（MD5 或 SHA256）</li>
-            <li>填写推流域名、AppName、StreamName</li>
+            <li>填写播放域名、AppName、StreamName</li>
             <li>可选择设置密钥和过期时间进行鉴权</li>
             <li>点击"生成所有协议地址"按钮</li>
             <li>根据需要复制对应协议的地址</li>
@@ -445,6 +433,7 @@ const StreamUrlGenerator: React.FC<StreamUrlGeneratorProps> = ({ onHistoryClick 
             <li>过期时间为UTC时间，格式：YYYY-MM-DD HH:MM:SS</li>
             <li>密钥和过期时间必须同时设置或同时为空</li>
             <li>所有协议地址会同时生成并保存到历史记录</li>
+            <li>FLV 和 M3U8 格式使用 HTTP 协议</li>
           </ul>
         </div>
       </Card>
@@ -452,4 +441,4 @@ const StreamUrlGenerator: React.FC<StreamUrlGeneratorProps> = ({ onHistoryClick 
   );
 };
 
-export default StreamUrlGenerator;
+export default PlayUrlGenerator;
