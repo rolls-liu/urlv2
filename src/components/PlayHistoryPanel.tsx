@@ -78,14 +78,50 @@ const PlayHistoryPanel: React.FC<PlayHistoryPanelProps> = ({ onBack }) => {
     setDetailModalVisible(true);
   };
 
-  // 复制到剪贴板
+  // 复制到剪贴板（兼容非HTTPS环境）
   const handleCopy = async (text: string) => {
+    // 方案1：使用 Clipboard API（HTTPS 环境）
+    if (navigator.clipboard && window.isSecureContext) {
+      try {
+        await navigator.clipboard.writeText(text);
+        message.success('已复制到剪贴板');
+        return;
+      } catch (e) {
+        console.warn('Clipboard API 失败，尝试备用方案');
+      }
+    }
+    
+    // 方案2：使用 execCommand（兼容旧浏览器和非HTTPS）
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '0';
+    textArea.style.top = '0';
+    textArea.style.width = '2em';
+    textArea.style.height = '2em';
+    textArea.style.padding = '0';
+    textArea.style.border = 'none';
+    textArea.style.outline = 'none';
+    textArea.style.boxShadow = 'none';
+    textArea.style.background = 'transparent';
+    textArea.style.opacity = '0';
+    textArea.style.zIndex = '-1';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
     try {
-      await navigator.clipboard.writeText(text);
-      message.success('已复制到剪贴板');
-    } catch (error) {
-      console.error('复制失败:', error);
-      message.error('复制失败');
+      const successful = document.execCommand('copy');
+      textArea.remove();
+      if (successful) {
+        message.success('已复制到剪贴板');
+      } else {
+        message.info('请手动复制：Ctrl+C / Cmd+C');
+      }
+    } catch (err) {
+      textArea.remove();
+      console.error('复制失败:', err);
+      message.info('请手动复制：Ctrl+C / Cmd+C');
     }
   };
 
