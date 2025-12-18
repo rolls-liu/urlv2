@@ -1,6 +1,6 @@
 # 推流地址生成器
 
-一个功能完整的推流地址生成器，支持多种协议和加密方式，具有数据持久化和历史记录功能。
+一个功能完整的推流/播放地址生成器，支持多种协议和加密方式，具有服务端数据持久化和历史记录功能。
 
 ## 功能特性
 
@@ -16,9 +16,10 @@
 - **SHA256** 加密
 
 ### 💾 数据功能
+- 服务端数据持久化（SQLite）
 - 自动保存最后一次配置
 - 历史记录存储（最多100条）
-- 一键复制推流地址
+- 一键复制推流/播放地址
 - 清空输入功能
 
 ### 📱 用户体验
@@ -35,15 +36,27 @@
 
 ### 安装依赖
 ```bash
-npm install
+# 安装前端和后端依赖
+npm run install:all
 ```
 
 ### 启动开发服务器
 ```bash
+# 同时启动前端和后端
 npm start
 ```
 
-应用将在 http://localhost:3000 启动
+- 前端：http://localhost:3000
+- 后端 API：http://localhost:3001
+
+### 单独启动
+```bash
+# 仅启动前端
+npm run client
+
+# 仅启动后端
+npm run server
+```
 
 ### 构建生产版本
 ```bash
@@ -69,7 +82,7 @@ npm run build
 - 每次生成地址都会自动保存到历史记录
 - 可以查看、复制、删除历史记录
 - 支持批量清空所有记录
-- 历史记录存储在浏览器本地存储中
+- 历史记录存储在服务端数据库中，清除浏览器缓存不会丢失
 
 ## 推流地址格式
 
@@ -100,28 +113,41 @@ rtmp://域名:443/AppName/StreamName?txSecret=加密值&txTime=时间戳
 
 ## 技术栈
 
+### 前端
 - **React 18** - 前端框架
 - **TypeScript** - 类型安全
 - **Ant Design** - UI组件库
 - **CryptoJS** - 加密算法
 - **Day.js** - 时间处理
 
+### 后端
+- **Express** - Web 服务框架
+- **sql.js** - 纯 JavaScript SQLite 实现
+- **CORS** - 跨域支持
+
 ## 项目结构
 
 ```
-src/
-├── components/          # 组件目录
-│   ├── StreamUrlGenerator.tsx  # 主生成器组件
-│   └── HistoryPanel.tsx        # 历史记录组件
-├── types/              # 类型定义
-│   └── index.ts
-├── utils/              # 工具函数
-│   ├── urlGenerator.ts # 地址生成逻辑
-│   └── storage.ts      # 存储管理
-├── App.tsx             # 主应用组件
-├── App.css             # 应用样式
-├── index.tsx           # 应用入口
-└── index.css           # 全局样式
+├── server/              # 后端服务
+│   ├── index.js         # Express 服务入口
+│   └── package.json     # 后端依赖
+├── src/
+│   ├── components/      # 组件目录
+│   │   ├── StreamUrlGenerator.tsx  # 推流地址生成器
+│   │   ├── PlayUrlGenerator.tsx    # 播放地址生成器
+│   │   └── HistoryPanel.tsx        # 历史记录组件
+│   ├── types/           # 类型定义
+│   │   └── index.ts
+│   ├── utils/           # 工具函数
+│   │   ├── urlGenerator.ts  # 地址生成逻辑
+│   │   ├── storage.ts       # 存储管理
+│   │   └── api.ts           # API 请求封装
+│   ├── App.tsx          # 主应用组件
+│   ├── App.css          # 应用样式
+│   ├── index.tsx        # 应用入口
+│   └── index.css        # 全局样式
+├── package.json         # 前端依赖和脚本
+└── README.md
 ```
 
 ## 开发说明
@@ -135,6 +161,21 @@ src/
 - 主要样式在 `src/App.css` 中
 - 全局样式在 `src/index.css` 中
 - 使用Ant Design主题定制
+
+## 部署说明
+
+### 生产环境部署
+1. 构建前端：`npm run build`
+2. 将 `build` 目录复制到 `server/build`
+3. 在服务器上安装后端依赖：`cd server && npm install`
+4. 启动服务：`node index.js`
+5. 服务默认运行在 3001 端口，同时提供前端静态文件和 API 服务
+
+### API 端点
+- `GET/POST /api/stream/config` - 推流配置
+- `GET/POST/DELETE /api/stream/history` - 推流历史
+- `GET/POST /api/play/config` - 播放配置
+- `GET/POST/DELETE /api/play/history` - 播放历史
 
 ## 许可证
 
