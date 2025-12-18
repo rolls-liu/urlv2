@@ -82,8 +82,7 @@ const PlayUrlGenerator: React.FC<PlayUrlGeneratorProps> = ({ onHistoryClick }) =
         // 设置默认值
         form.setFieldsValue({
           encryption: 'MD5',
-          appName: 'live',
-          expireTime: dayjs().add(1, 'day')
+          appName: 'live'
         });
       }
     } catch (error) {
@@ -91,8 +90,7 @@ const PlayUrlGenerator: React.FC<PlayUrlGeneratorProps> = ({ onHistoryClick }) =
       // 设置默认值作为后备
       form.setFieldsValue({
         encryption: 'MD5',
-        appName: 'live',
-        expireTime: dayjs().add(1, 'day')
+        appName: 'live'
       });
       setHistoryInputs({
         domains: [],
