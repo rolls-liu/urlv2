@@ -155,10 +155,24 @@ const StreamUrlGenerator: React.FC<StreamUrlGeneratorProps> = ({ onHistoryClick 
     }
   };
 
-  // 复制到剪贴板
+  // 复制到剪贴板（兼容非HTTPS环境）
   const handleCopy = async (text: string) => {
     try {
-      await navigator.clipboard.writeText(text);
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        // 兼容方案：使用 textarea
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        document.execCommand('copy');
+        textArea.remove();
+      }
       message.success('已复制到剪贴板');
     } catch (error) {
       console.error('复制失败:', error);
