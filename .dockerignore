@@ -7,6 +7,7 @@ README.md
 .nyc_output
 coverage
 .cache
-src
-public
 .eslintcache
+build
+server/node_modules
+server/data.db

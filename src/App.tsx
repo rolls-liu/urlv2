@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
-import { ConfigProvider, Menu, Layout } from 'antd';
+import React, { useState, useEffect } from 'react';
+import { ConfigProvider, Menu, Layout, Spin } from 'antd';
 import { PlayCircleOutlined, VideoCameraOutlined } from '@ant-design/icons';
 import zhCN from 'antd/locale/zh_CN';
 import StreamUrlGenerator from './components/StreamUrlGenerator';
 import PlayUrlGenerator from './components/PlayUrlGenerator';
 import HistoryPanel from './components/HistoryPanel';
 import PlayHistoryPanel from './components/PlayHistoryPanel';
+import { initializeStorage } from './utils/storage';
 import './App.css';
 
 const { Header, Content } = Layout;
@@ -14,6 +15,14 @@ type ViewType = 'stream-generator' | 'play-generator' | 'stream-history' | 'play
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<ViewType>('stream-generator');
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // 初始化存储，从服务器加载数据
+    initializeStorage()
+      .then(() => setIsLoading(false))
+      .catch(() => setIsLoading(false));
+  }, []);
 
   const handleShowStreamHistory = () => {
     setCurrentView('stream-history');
@@ -64,6 +73,16 @@ const App: React.FC = () => {
   };
 
   const showMenu = currentView === 'stream-generator' || currentView === 'play-generator';
+
+  if (isLoading) {
+    return (
+      <ConfigProvider locale={zhCN}>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+          <Spin size="large" tip="加载中..." />
+        </div>
+      </ConfigProvider>
+    );
+  }
 
   return (
     <ConfigProvider locale={zhCN}>

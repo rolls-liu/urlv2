@@ -4,23 +4,27 @@
   "description": "推流地址生成器",
   "private": true,
   "dependencies": {
+    "@types/crypto-js": "^4.1.1",
     "@types/node": "^18.15.0",
     "@types/react": "^18.0.28",
     "@types/react-dom": "^18.0.11",
+    "antd": "^5.12.0",
+    "concurrently": "^8.2.2",
+    "crypto-js": "^4.1.1",
+    "dayjs": "^1.11.10",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-scripts": "5.0.1",
-    "typescript": "^4.9.5",
-    "crypto-js": "^4.1.1",
-    "@types/crypto-js": "^4.1.1",
-    "antd": "^5.12.0",
-    "dayjs": "^1.11.10"
+    "typescript": "^4.9.5"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "concurrently \"npm run server\" \"npm run client\"",
+    "client": "react-scripts start",
+    "server": "cd server && npm start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "install:all": "npm install && cd server && npm install"
   },
   "eslintConfig": {
     "extends": [
